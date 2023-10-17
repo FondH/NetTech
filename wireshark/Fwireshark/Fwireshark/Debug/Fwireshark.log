@@ -1,0 +1,3 @@
+﻿  main.cpp
+G:\大三上\网络技术与应用作业\code\wireshark\Fwireshark\Fwireshark\main.cpp(51,11): warning C4101: “checksum”: 未引用的局部变量
+  Fwireshark.vcxproj -> G:\大三上\网络技术与应用作业\code\wireshark\Fwireshark\Debug\Fwireshark.exe

@@ -20,7 +20,7 @@ using namespace std;
 #define VMnet8_NUM 7
 #define WLAN_NUM   5
 #define DEFAULT_PC_MAC "F0-77-C3-16-85-5F"
-#define DEFAULT_PC_IP  ""
+#define DEFAULT_PC_IP  "10.136.92.19"
 #define VM_PC_MAC  "00-50-56-C0-00-08"
 #define VM_PC_IP   "192.168.137.1"
 #define DEFAULT_VM_MAC  "00-0C-29-BD-D8-4E"
@@ -171,6 +171,6 @@ int main() {
             quit = 1;
         system("cls");
     }
-
+    cout << "Exit\n";
     return 1;
 }

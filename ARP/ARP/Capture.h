@@ -16,7 +16,8 @@ using namespace std;
 #define PROTO_IP 0x800
 #define OP_REQ 1
 #define OP_REP 2
-//Ethernet header
+
+//Eth header
 struct eth_header {
     uint8_t  dst_mac[ETH_HW_ADDR_LEN];    
     uint8_t  src_mac[ETH_HW_ADDR_LEN];     

@@ -6,7 +6,7 @@
 using namespace std;
 
 struct ArpEntry {
-	uint64_t DstMac;
+	u_char*  DstMac;
 	clock_t  stime;
 
 };
@@ -18,24 +18,29 @@ private:
 
 public:
 	//根据路由表查询的下一跳dstIp 结果存储dstmac里
-	bool lookUp(uint32_t dstIp, uint64_t& dstmac);
+	bool lookUp(uint32_t dstIp, u_char** mac);
 
 	//更新的new_mac刷新
-	void update(uint32_t ip, uint64_t new_mac);
+	void update(uint32_t ip, u_char* new_mac);
 
+	int getSize();
+	~ArpCache() {}
 };
 
 
-bool ArpCache:: lookUp(uint32_t dstIp, uint64_t& mac) {
+bool ArpCache:: lookUp(uint32_t dstIp, u_char** mac) {
 	auto e = cache.find(dstIp);
 	if (e != cache.end() && (clock()-e->second.stime) < ArpEntryMaxTime) {
-		mac = e->second.DstMac;
+		*mac = e->second.DstMac;
 		return 1;
 	}
-	else
+	else 
 		return 0;
 }
-void ArpCache::update(uint32_t ip, uint64_t new_mac) {
+void ArpCache::update(uint32_t ip, u_char* new_mac) {
 	cache[ip].DstMac = new_mac;
 	cache[ip].stime = clock();
+}
+int ArpCache::getSize() {
+	return cache.size();
 }

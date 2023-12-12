@@ -1,7 +1,5 @@
 ﻿  main.cpp
 G:\大三上\网络技术与应用作业\code\Rooter\Rooter\tool.h(15,13): warning C4018: “<”: 有符号/无符号不匹配
 G:\大三上\网络技术与应用作业\code\Rooter\Rooter\tool.h(31,13): warning C4018: “<”: 有符号/无符号不匹配
-  root.cpp
-  正在生成代码...
-G:\大三上\网络技术与应用作业\code\Rooter\Rooter\RootTable.h(82): warning C4172: 返回局部变量或临时变量的地址: r
+G:\大三上\网络技术与应用作业\code\Rooter\Rooter\RootTable.h(94): warning C4172: 返回局部变量或临时变量的地址: r
   Rooter.vcxproj -> G:\大三上\网络技术与应用作业\code\Rooter\Rooter\Debug\Rooter.exe

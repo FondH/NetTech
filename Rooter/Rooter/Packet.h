@@ -13,6 +13,12 @@ using namespace std;
 #define OP_REQ 1
 #define OP_REP 2
 
+bool EqualMac(u_char *mac1, u_char * mac2) {
+    char* _m = (char*)mac1;
+    char* _n = (char*)mac2;
+    return strcmp(_m, _n) == 0;
+}
+
 struct eth_header {
     uint8_t  dst_mac[ETH_HW_ADDR_LEN];
     uint8_t  src_mac[ETH_HW_ADDR_LEN];
@@ -62,7 +68,7 @@ struct arp_hdr {
 struct v4Header {
     uint8_t verlength;
     uint8_t tos; 
-  
+
     uint16_t total_length;
 
     uint16_t identification;
@@ -92,15 +98,14 @@ struct ICMPPing {
 struct ArpPacket {
     eth_header eth_head;
     arp_hdr arp_head;
-
-   
+ 
 };
 struct PingPacket {
     eth_header eth_head;
     v4Header v4_Head;
     ICMPPing ping_Head;
 };
-
+  
 // ICMP time exceeded -- ttl == 0 ´æÔÚ³¬Ê±
 struct ICMPTimeExceededData { 
     BYTE type;  // 11

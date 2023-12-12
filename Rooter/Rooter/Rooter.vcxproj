@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ArpCache.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="PacketQueue.h" />
     <ClInclude Include="Device.h" />

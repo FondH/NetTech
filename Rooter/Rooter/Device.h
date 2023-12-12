@@ -21,8 +21,10 @@ char errbuf[PCAP_ERRBUF_SIZE];
 pcap_t* adhandle = NULL;
 uint32_t  ip_INC[INC_NUM] = {0};
 uint32_t  mask_INC[INC_NUM] = { 0 };
-BYTE mac_INC[6] = {0};
 
+
+u_char mac_INC[2][6] = { 0 };
+u_char mac_INC2[6] = { 0 };
 //返回列表位置给alldevs 成功返回列表数目 否则-1
 int get_device_list(pcap_if_t** alldevs, char* errbuf, bool Is_print); 
 
@@ -33,8 +35,7 @@ int open_device(pcap_t** adhandle, int num, pcap_if_t* alldevs, char* errbuf);
 //初始化rooter设备变量，句柄赋值给adhandle
 bool boot_root_INC();
 
-//对adhandle句柄捕获流量，进行处理
-//int capture(pcap_t* adhandle); 
+
 
 bool boot_root_INC() {
     pcap_if_t* alldevs = NULL;
@@ -47,9 +48,12 @@ bool boot_root_INC() {
 
     string mac_string = DEFAULT_PC_MAC;
     sscanf_s(mac_string.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
-        &mac_INC[0], &mac_INC[1], &mac_INC[2],
-        &mac_INC[3], &mac_INC[4], &mac_INC[5]);
+        &mac_INC[0][0], &mac_INC[0][1], &mac_INC[0][2],
+        &mac_INC[0][3], &mac_INC[0][4], &mac_INC[0][5]);
 
+    sscanf_s(mac_string.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
+        &mac_INC[1][0], &mac_INC[1][1], &mac_INC[1][2],
+        &mac_INC[1][3], &mac_INC[1][4], &mac_INC[1][5]);
     cout << "Init... " << endl;
     
 }

@@ -2,19 +2,19 @@
 #include <sstream>
 #include<string>
 using namespace std;
-string intToIp(uint32_t& ip) {
+string intToIp(const uint32_t& ipp) {
 
-    return  to_string((ip >> 24) & 0xFF) + ":" + to_string((ip >> 16) & 0xFF) + ":" + to_string((ip >> 8) & 0xFF) + ":" + to_string((ip) & 0xFF);
+    return  to_string((ipp >> 24) & 0xFF) + ":" + to_string((ipp >> 16) & 0xFF) + ":" + to_string((ipp >> 8) & 0xFF) + ":" + to_string((ipp) & 0xFF);
 }
-uint32_t ipToInt(const string& ip) {
+uint32_t ipToInt(const string& ipp) {
 
     uint32_t intIp = 0;
     int r = 0;
     int shift = 16;
     string buffer = "";
-    for (;r < ip.length();r++)
-        buffer += ip[r];
-    if (ip[r] == ':') {
+    for (;r < ipp.length();r++)
+        buffer += ipp[r];
+    if (ipp[r] == ':') {
         intIp += stoi(buffer) << shift;
         shift -= 8;
         buffer.clear();
@@ -49,3 +49,17 @@ string intToMac(uint64_t mac) {
     }
     return oss.str();
 }
+
+string arrayToMac(u_char* mac){
+    ostringstream oss;
+    for (int i = 0;i < 6;i++) {
+        oss << setfill('0') << setw(2) << hex << static_cast<int>(mac[i]);
+        if (i < 5)
+            oss << "-";
+    }
+     //oss<<static_cast<int>(mac[5]);
+    return oss.str();
+
+}
+
+

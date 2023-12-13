@@ -18,6 +18,9 @@ private:
 	unordered_map<u_char*, int> map_no;
 	
 public:
+	PacketQueue() {
+		
+	}
 	bool push(const u_char* p, int len) {
 		
 		u_char* tp = new u_char(len);
@@ -46,10 +49,32 @@ public:
 
 		 return map_no[buffer.front()];
 	}
+
+	 void printPacketQueue() {
+		 
+		 int i;
+		 int num = buffer.size();
+
+		 cout << "\n\n";
+
+		 cout << "Rooting Packet buffer" << endl;
+		 cout << "Size: " << num << endl;
+		 cout << setfill('=') << setw(60) << "=" << endl;
+		
+		
+		/* cout << setfill(' ') << left << setw(COLUMN_GAP) << "No."
+			 << setw(COLUMN_GAP) << "Type"
+			 << setw(COLUMN_GAP) << "SRC_IP"
+			 << setw(COLUMN_GAP) << "DST_IP" << endl;*/
+		 
+		 
+
+	 }
+
 	 ~PacketQueue() {
 		 while (!buffer.empty())
-			 this->pop();
-			 
-		 
+			 this->pop();		 
 	 }
+
+
 };

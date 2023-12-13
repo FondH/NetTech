@@ -7,9 +7,16 @@
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"Packet.lib")
 #pragma comment(lib,"wpcap.lib")
+
+
 #define VMnet1_NUM 8
 #define VMnet8_NUM 7
-#define DEFAULT_PC_MAC "F0-77-C3-16-85-5F"
+#define DEFAULT_PC_MAC "00-50-56-C0-00-08"
+
+
+#define DEFAULT_INC0_IP "206.1.1.1"
+#define DEFAULT_INC1_IP "206.1.2.1"
+
 #define DEFAULT_PC_IP  "10.136.92.19"
 #define INC_NUM 2
 
@@ -35,16 +42,26 @@ int open_device(pcap_t** adhandle, int num, pcap_if_t* alldevs, char* errbuf);
 //初始化rooter设备变量，句柄赋值给adhandle
 bool boot_root_INC();
 
+//
+pcap_t* getIncHandle(int n);
 
 
+pcap_t* getIncHandle(int gig) {
+    //Todo 根据路由表gig 得到对应INC句柄 后续进行转发
+    if(adhandle)
+        return adhandle;
+
+    return nullptr;
+}
 bool boot_root_INC() {
     pcap_if_t* alldevs = NULL;
     get_device_list(&alldevs, errbuf, 0);
-    if (!open_device(&adhandle, VMnet1_NUM, alldevs, errbuf)) {
+    if (!open_device(&adhandle, VMnet8_NUM, alldevs, errbuf)) {
         cerr << "[Error]: INC device open defeated" << endl;
         return -1;
     }
     pcap_freealldevs(alldevs);
+
 
     string mac_string = DEFAULT_PC_MAC;
     sscanf_s(mac_string.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
@@ -54,8 +71,14 @@ bool boot_root_INC() {
     sscanf_s(mac_string.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
         &mac_INC[1][0], &mac_INC[1][1], &mac_INC[1][2],
         &mac_INC[1][3], &mac_INC[1][4], &mac_INC[1][5]);
-    cout << "Init... " << endl;
-    
+    cout << "INC Init... \n\n\n" ;
+
+
+    ip_INC[0] = ipToInt(DEFAULT_INC0_IP);
+    ip_INC[1] = ipToInt(DEFAULT_INC1_IP);
+    mask_INC[0] = ipToInt("255.255.255.0");
+    mask_INC[1] = ipToInt("255.255.255.0");
+
 }
 
 
@@ -105,8 +128,8 @@ int open_device(pcap_t** adhandle, int num, pcap_if_t* alldevs, char* errbuf) {
     for (int j = 0; j < 2 && a != NULL; a = a->next) {   
         if (a->addr->sa_family == AF_INET) {
             cout << "[ IP ] " << inet_ntoa(((struct sockaddr_in*)a->addr)->sin_addr) << endl;
-            ip_INC[j] = inet_addr(inet_ntoa(((struct sockaddr_in*)a->addr)->sin_addr));
-            mask_INC[j] = inet_addr(inet_ntoa(((struct sockaddr_in*)a->netmask)->sin_addr));
+            ip_INC[j] = ntohl( inet_addr(inet_ntoa(((struct sockaddr_in*)a->addr)->sin_addr)));
+            mask_INC[j] =ntohl( inet_addr(inet_ntoa(((struct sockaddr_in*)a->netmask)->sin_addr)));
             j++;
         }
     }

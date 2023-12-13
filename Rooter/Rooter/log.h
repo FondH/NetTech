@@ -12,8 +12,8 @@ using namespace std;
 IP报文的接受：存源报文SrcIP DstIP
 
 */
-enum Type{sys=1, cap, send, trans};
-enum PackType{arp, ip, icmp};
+enum Type{Tsys=1,Tcap, Tsend, Ttrans};
+enum PackType{Parp, Pip, Picmp};
 class mess {
 	int no;
 	Type type;
@@ -45,7 +45,7 @@ public:
 		no = n;
 	}
 	mess(string s) {
-		type = sys;
+		type = Tsys;
 		optional = s;
 	}
 	Type getT() { return type; }
@@ -56,16 +56,16 @@ public:
 		string out = "";
 		switch (type)
 		{
-		case sys:
+		case Tsys:
 			out += "[SYS ]" + optional;
 			return out;
-		case cap:
+		case Tcap:
 			out += "[CAPTURE ";
 			break;
-		case send:
+		case Tsend:
 			out += "[SEND ";
 			break;
-		case trans:
+		case Ttrans:
 			out += "[TRANS] ";
 			out += "No." + to_string(no)+ ": " + intToIp(src_ip) + " -> " + intToIp(trans_ip) + " -> " + intToIp(dst_ip);
 			return out;
@@ -76,15 +76,15 @@ public:
 		
 		switch (packType)
 		{
-		case arp:
+		case Parp:
 			out += "Arp] ";
 			out += "src_ip:"+  intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip);
 			break;
 
-		case ip:
+		case Pip:
 			out += "No." + to_string(no) + "IP] "+ to_string(no) + intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip);
 			break;
-		case icmp:
+		case Picmp:
 			out += "No." + to_string(no) + "ICMP IP] "+  to_string(no) + intToIp(src_ip) + " dst_ip : " + intToIp(dst_ip);
 			break;
 		default:

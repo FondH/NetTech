@@ -32,6 +32,7 @@ struct eth_header {
 
 };
 
+#pragma pack(1) // ×Ö½Ú¶ÔÆë
 //arp 
 struct arp_hdr {
     uint16_t hw_type;               
@@ -64,7 +65,7 @@ struct arp_hdr {
 
 };
 
-  // protocol: TCP 6  UDP 17 ICMP 1
+  
 struct v4Header {
     uint8_t verlength;
     uint8_t tos; 
@@ -75,7 +76,7 @@ struct v4Header {
 
     uint8_t ttl;
 
-    uint8_t protocol;
+    uint8_t protocol;// protocol: TCP 6  UDP 17 ICMP 1
 
     uint16_t checksum;
 
@@ -86,7 +87,7 @@ struct v4Header {
 
 };
 
-//ICMP request reply
+//ICMP request or reply
 struct ICMPPing {
     BYTE type;//0 8
     BYTE code;  //0 

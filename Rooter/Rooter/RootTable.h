@@ -38,7 +38,8 @@ struct RouteEntry {
         oss << left << setw(COLUMN_GAP) << intToIp(destination)
             << setw(COLUMN_GAP) << intToIp(mask)
             << setw(COLUMN_GAP) << intToIp(nextHop)
-            <<setw(COLUMN_GAP)<<"gig"<<gig;
+            <<setw(COLUMN_GAP)<<gig;
+     
         return oss.str();
     }
 };
@@ -50,18 +51,22 @@ private:
     int n = 0;
 public:
     //初始默认网关
+    RouterTable() { n = 0; }
     RouterTable(const string d) { routes.push_back(RouteEntry("0.0.0.0","0.0.0.0","0.0.0.0", d)); }
 
     // 添加路由 
     void addRoute(const RouteEntry& entry);
-    bool addRoute(const string& n, const string& m, const string& h, const string& g);
+    bool addRoute(const string& n, const string& m, const string& h, const string& g) {
+        routes.push_back(RouteEntry(n, m, h, g));
+        return 1;
+    }
     
     // 删除路由 特定entry
     bool deleteRoute(const RouteEntry& entry);
 
     //匹配路由 逐条扫描、最长匹配
-    RouteEntry* findRoute(const string& d);
-    RouteEntry* findRoute(const uint32_t& d);
+    RouteEntry findRoute(const string& d);
+    RouteEntry findRoute(const uint32_t& d);
     
     void printTable();
     ~RouterTable() {
@@ -72,10 +77,6 @@ public:
 
 void RouterTable::addRoute(const RouteEntry& entry) {
     routes.push_back(entry);
-}
-bool RouterTable::addRoute(const string& n, const string& m, const string& h, const string& g) {
-    routes.push_back(RouteEntry(n, m, h,g));
-    return 1;
 }
 
 bool RouterTable::deleteRoute(const RouteEntry& entry) {
@@ -88,26 +89,27 @@ bool RouterTable::deleteRoute(const RouteEntry& entry) {
 }
 
 
-RouteEntry* RouterTable:: findRoute(const string& d) {
+RouteEntry RouterTable:: findRoute(const string& d) {
     for (auto r : routes)
         if (r.destination == stoi(d))
-            return &r;
-    return nullptr;
+            return r;
+
 }
-RouteEntry* RouterTable::findRoute(const uint32_t& d) {
-    if (routes.empty())
-        return nullptr;
+RouteEntry RouterTable::findRoute(const uint32_t& d) {
+
     RouteEntry* tp = &routes[0];
     for (auto r : routes)
-        if (r.destination == d && r.mask > tp->mask) {
+        if ( (r.destination & r.mask)  == (d & r.mask) && r.mask > tp->mask ) {
             tp = &r;
         }
           
-    return tp;
+    return *tp;
 }
 void RouterTable::printTable() {
+    cout << "\n\n";
+  
     cout << "IPv4 Rooting Table" << endl;
-    cout << setfill('-') << setw(60) << "-" << endl;
+    cout << setfill('=') << setw(60) << "=" << endl;
 
     cout << setfill(' ') << left << setw(COLUMN_GAP) << "网络目标"
          << setw(COLUMN_GAP) << "掩码"

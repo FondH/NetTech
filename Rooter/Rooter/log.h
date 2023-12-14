@@ -1,5 +1,6 @@
 #pragma once
 #include<string>
+#include<mutex>
 #include<Windows.h>
 #include<vector>
 #include<string>
@@ -13,7 +14,7 @@ IP报文的接受：存源报文SrcIP DstIP
 
 */
 enum Type{Tsys=1,Tcap, Tsend, Ttrans};
-enum PackType{Parp, Pip, Picmp};
+enum PackType{Parp, Pip, Picmp, Pudp,Ptcp};
 class mess {
 	int no;
 	Type type;
@@ -28,8 +29,10 @@ class mess {
 public:
 
 	mess(int n,Type t, PackType p, u_char* s_mac, u_char* d_mac, uint32_t s_ip, uint32_t d_ip){
-		memcpy(src_mac, s_mac, 6);
-		memcpy(dst_mac, d_mac, 6);
+		if(s_mac !=nullptr)
+			memcpy(src_mac, s_mac, 6);
+		if(d_mac!=nullptr)
+			memcpy(dst_mac, d_mac, 6);
 		src_ip = s_ip;
 		dst_ip = d_ip;
 		type = t;
@@ -77,15 +80,15 @@ public:
 		switch (packType)
 		{
 		case Parp:
-			out += "Arp] ";
-			out += "src_ip:"+  intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip);
+			out += " Arp ] ";
+			out += " src_ip: "+  intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip);
 			break;
 
 		case Pip:
-			out += "No." + to_string(no) + "IP] "+ to_string(no) + intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip);
+			out += "No." + to_string(no) + " IP] "+  intToIp(src_ip) + " dst_ip:" + intToIp(dst_ip) ;
 			break;
 		case Picmp:
-			out += "No." + to_string(no) + "ICMP IP] "+  to_string(no) + intToIp(src_ip) + " dst_ip : " + intToIp(dst_ip);
+			out += "No." + to_string(no) + " ICMP IP] "+   intToIp(src_ip) + " dst_ip : " + intToIp(dst_ip) ;
 			break;
 		default:
 			break;
@@ -99,22 +102,26 @@ public:
 class Loger {
 	
 	vector<mess> logerBuffer;
-	
+	mutex mtx;
 public:
 	void push(int n,Type t, PackType p, u_char *s_mac, u_char *d_mac, uint32_t s_ip, uint32_t d_ip){
+		lock_guard<std::mutex> lk(mtx);
 		logerBuffer.push_back(mess(n,t, p, s_mac, d_mac, s_ip, d_ip));
 
 	}
 	void push(int n, Type t, PackType p, uint32_t s_ip, uint32_t d_ip, uint32_t t_ip) {
+		lock_guard<std::mutex> lk(mtx);
 		logerBuffer.push_back(mess(n, t, p, s_ip, d_ip, t_ip));
 
 	}
 	void push(string s) {
+		lock_guard<std::mutex> lk(mtx);
 		logerBuffer.push_back(mess(s));
 		
 	}
 
 	void print(int filter){
+		lock_guard<std::mutex> lk(mtx);
 		if (!filter)
 			for (auto& entry : logerBuffer)
 				cout<<entry.toString()<<endl;

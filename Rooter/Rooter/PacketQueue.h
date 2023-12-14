@@ -1,4 +1,5 @@
 #pragma once
+#include<mutex>
 #include<queue>
 #include<unordered_map>
 #include "tool.h"
@@ -10,12 +11,15 @@ int num = 1;
 int getNum() {
 	return num++;
 }
-
+int retNum() {
+	return num;
+}
 
 class PacketQueue {
 private:
 	queue<u_char*> buffer;
 	unordered_map<u_char*, int> map_no;
+	mutex mtx;
 	
 public:
 	PacketQueue() {
@@ -23,9 +27,9 @@ public:
 	}
 	bool push(const u_char* p, int len) {
 		
-		u_char* tp = new u_char(len);
+		u_char* tp = new u_char[len];
 		memcpy(tp, p, len);
-
+		lock_guard<std::mutex> lk(mtx);
 		if (buffer.size() < BufferMaxSize) {
 			buffer.push(tp);
 			map_no[tp] = getNum();
@@ -34,7 +38,12 @@ public:
 		return 0;
 	}
 	 u_char* pop() {
-		while (buffer.empty()) { ; }
+		
+		while (buffer.empty()) {
+			Sleep(10);
+			continue; 
+		}
+		lock_guard<std::mutex> lk(mtx);
 		auto packet = buffer.front();
 		buffer.pop();
 		map_no.erase(map_no.find(packet));
@@ -44,6 +53,7 @@ public:
 	}
 
 	 int getNo(u_char* u) {
+		 lock_guard<std::mutex> lk(mtx);
 		 if (buffer.empty())
 			 return 0;
 

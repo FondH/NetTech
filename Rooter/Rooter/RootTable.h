@@ -33,6 +33,8 @@ struct RouteEntry {
     }
     RouteEntry():destination(0),mask(0),nextHop(0), gig(0){}
     RouteEntry(const string& d,const string& m,const string& n,const string& g):destination(ipToInt(d)),mask(ipToInt(m)),nextHop(ipToInt(n)),gig(stoi(g)) {}
+    RouteEntry(const int& d, const int& m, const int& n, const int& g) :destination(d), mask(m), nextHop(n), gig(g) {}
+
     string toString(){
         ostringstream oss;
         oss << left << setw(COLUMN_GAP) << intToIp(destination)
@@ -42,6 +44,7 @@ struct RouteEntry {
      
         return oss.str();
     }
+
 };
 
 
@@ -97,13 +100,17 @@ RouteEntry RouterTable:: findRoute(const string& d) {
 }
 RouteEntry RouterTable::findRoute(const uint32_t& d) {
 
-    RouteEntry* tp = &routes[0];
-    for (auto r : routes)
-        if ( (r.destination & r.mask)  == (d & r.mask) && r.mask > tp->mask ) {
-            tp = &r;
+    RouteEntry tp = routes[0];
+    int sz = routes.size();
+    for (int i = 1; i < sz;i++) {
+        RouteEntry r = routes[i];
+        if ((r.destination & r.mask) == (d & r.mask) && r.mask > tp.mask) {
+           // bool ii = r.mask > tp.mask;
+           // cout << intToIp(r.destination & r.mask) << " " << ii << endl;
+            tp = r;
         }
-          
-    return *tp;
+    }
+    return tp;
 }
 void RouterTable::printTable() {
     cout << "\n\n";

@@ -11,7 +11,8 @@
 
 #define VMnet1_NUM 8
 #define VMnet8_NUM 7
-#define DEFAULT_PC_MAC "00-50-56-C0-00-08"
+#define WIN10_NUM 5
+#define DEFAULT_PC_MAC "00-0c-29-c9-bd-0a"
 
 
 #define DEFAULT_INC0_IP "206.1.1.1"
@@ -55,8 +56,8 @@ pcap_t* getIncHandle(int gig) {
 }
 bool boot_root_INC() {
     pcap_if_t* alldevs = NULL;
-    get_device_list(&alldevs, errbuf, 0);
-    if (!open_device(&adhandle, VMnet8_NUM, alldevs, errbuf)) {
+    get_device_list(&alldevs, errbuf,0);
+    if (!open_device(&adhandle, WIN10_NUM, alldevs, errbuf)) {
         cerr << "[Error]: INC device open defeated" << endl;
         return -1;
     }
@@ -98,7 +99,7 @@ int get_device_list(pcap_if_t** alldevs, char* errbuf, bool is_print) {
     for (d = *alldevs; d; d = d->next, ++i)
     {
         if (d->description)
-            if (!is_print)
+            if (is_print)
                printf("%d. %s (%s)\n", i, d->name, d->description);
         
         else

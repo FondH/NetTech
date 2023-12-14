@@ -13,12 +13,8 @@ using namespace std;
 #define OP_REQ 1
 #define OP_REP 2
 
-bool EqualMac(u_char *mac1, u_char * mac2) {
-    char* _m = (char*)mac1;
-    char* _n = (char*)mac2;
-    return strcmp(_m, _n) == 0;
-}
 
+#pragma pack(1) // 字节对齐 
 struct eth_header {
     uint8_t  dst_mac[ETH_HW_ADDR_LEN];
     uint8_t  src_mac[ETH_HW_ADDR_LEN];
@@ -32,7 +28,7 @@ struct eth_header {
 
 };
 
-#pragma pack(1) // 字节对齐
+
 //arp 
 struct arp_hdr {
     uint16_t hw_type;               
@@ -73,7 +69,7 @@ struct v4Header {
     uint16_t total_length;
 
     uint16_t identification;
-
+    uint16_t flgoff;
     uint8_t ttl;
 
     uint8_t protocol;// protocol: TCP 6  UDP 17 ICMP 1
@@ -127,6 +123,13 @@ struct ICMPDestUnreachableData {
     BYTE data[8];
 } ;
 
+#pragma pack() // 恢复默认对齐方式
+
+bool EqualMac(u_char* mac1, u_char* mac2) {
+    char* _m = (char*)mac1;
+    char* _n = (char*)mac2;
+    return strcmp(_m, _n) == 0;
+}
 
 bool isARPPkt(const u_char* pktData) {
     return ntohs(((ArpPacket*)pktData)->eth_head.eth_type) == ETH_TYPE_ARP;

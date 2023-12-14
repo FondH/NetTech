@@ -47,7 +47,7 @@ void cmdThrd();                                // 主控线程
 
 // 广播ARP请求，默认不找自己
 int broadARPReq(const uint32_t& dst_ip);                      
-
+void exit_router();
 
 /*
 * 转发数据包
@@ -68,15 +68,18 @@ static DWORD WINAPI mesThrd(LPVOID lpParam);    // 消息接受、dunp线程
 
 
 uint32_t matchNet(uint32_t dst_ip){
-    if (dst_ip & mask_INC[0] == ip_INC[0] & mask_INC[0])
+    if ((dst_ip & mask_INC[0]) == (ip_INC[0] & mask_INC[0]))
         return ip_INC[0];
-    if (dst_ip & mask_INC[1] == ip_INC[1] & mask_INC[1])
+    if ((dst_ip & mask_INC[1]) == (ip_INC[1] & mask_INC[1]))
         return ip_INC[1];
     return 0;
 }
 bool MacIs2Self(u_char* dst_mac) {
+    for (int i = 0; i < 5; i++)
+        if (dst_mac[i] != mac_INC[0][i])
+            return 0;
 
-    return EqualMac(dst_mac, mac_INC[0]) || EqualMac(dst_mac, mac_INC[1]);
+    return 1;
 
 }
 bool IpIs2Self(uint32_t& dst_ip) {
@@ -137,7 +140,13 @@ void parseCmd(const string& c) {
             cout << "\n[ERROR]  'log'  print or dump ? \n";
         }
     }
+    else if (cmd == "arpcache") {
+        arpCache.printArpAache();
 
+    }
+    else if(cmd == "packetqueue"){
+        packetBuffer.printPacketQueue();
+    }
     else if (cmd == "") {
 
 
@@ -151,8 +160,8 @@ void parseCmd(const string& c) {
 int broadARPReq(const uint32_t& dst_ip) {
 
     ArpPacket arp_req;
-    uint32_t src_ip;
-    if(!(src_ip=(matchNet(dst_ip))))
+    uint32_t src_ip = matchNet(dst_ip);
+    if(!src_ip)
         return -1;
 
     /*Init Mac & Ip*/
@@ -208,6 +217,9 @@ int _transPacket(u_char* pkt) {
 
     /* Next IP */
    // cout << intToIp(ntohl(ipPack->destination_address));
+    //if (ntohl(ipPack->destination_address) == ipToInt("206.1.1.2"))
+      //  cout << 1;
+
     RouteEntry entry = rooterTable.findRoute(ntohl(ipPack->destination_address));
    
     if (!&entry)
@@ -216,11 +228,17 @@ int _transPacket(u_char* pkt) {
     /* Next MAC */
     clock_t timer = clock();
     u_char* next_mac = new u_char[6];
-    while (!arpCache.lookUp(entry.nextHop, &next_mac)) {
+
+    uint32_t temp = entry.nextHop;
+    if (entry.nextHop == 0)
+        temp = ntohl(ipPack->destination_address);
+
+    while (!arpCache.lookUp(temp, &next_mac)) {
+        broadARPReq(temp);
         if (clock() - timer > 10000)
             return 2;
         //cout << "Search Next Mac Runtime" << endl;
-        Sleep(100);
+        Sleep(10);
     }
 
     /* Send */
@@ -228,11 +246,11 @@ int _transPacket(u_char* pkt) {
     memcpy(etheader->src_mac, mac_INC[entry.gig], 6);
     logger.push(packetBuffer.getNo(pkt), Ttrans, Pip, ntohl(ipPack->source_address), ntohl(ipPack->destination_address), entry.nextHop);
 
-
+    //adhandle 应该取决于entry.inferface 
 
     int rst = pcap_sendpacket(adhandle, (unsigned char*)pkt, sizeof(eth_header)+v4len);
                 
-    if (rst <= 0)
+    if (rst != 0)
         return 3;
 
     return 0;
@@ -255,17 +273,18 @@ DWORD WINAPI tnsThrd(LPVOID lpParam) {
         /* 报错信息 */
         string opt = "Error: ";
         if (rst == 1)
-            opt += intToIp(ntohl(v4head->source_address)) + " 路由查询失败";
+            opt += intToIp(ntohl(v4head->destination_address)) + " 路由查询失败";
         else if (rst == 2) {
-            opt += arrayToMac(((eth_header*)pkt)->dst_mac) + "下一跳地址查询失败";
+            opt += intToIp(ntohl(v4head->destination_address))+ ":" + arrayToMac(((eth_header*)pkt)->dst_mac) + "下一跳地址查询失败";
             //Send ICMP Timeout
         }
         else if (rst == 3) {
-            opt += "INC 发送数据失败";
+            opt += intToIp(ntohl(v4head->destination_address)) + ":" + arrayToMac(((eth_header*)pkt)->dst_mac) + "INC 发送数据失败";
         }
         logger.push(opt);
 
     }
+    return 0;
 }
 
 
@@ -274,21 +293,38 @@ void _rcvProc(int totalen, const u_char* pkt_data) {
     uint16_t etherType = ntohs(((eth_header*)pkt_data)->eth_type);
     if (!MacIs2Self(ehtHeader->dst_mac))
         return;
+    //cout << arrayToMac(ehtHeader->dst_mac)<<endl;
     if (etherType == 0x0800) {//IP
         v4Header* v4header = (v4Header*)(pkt_data + sizeof(eth_header));
 
         if (!Checksum(v4header))
             return;
 
-        if ((ntohl(v4header->destination_address) == ip_INC[0]
-            || ntohl(v4header->destination_address) == ip_INC[1]))
+        if (ntohl(v4header->destination_address) == ip_INC[0] || ntohl(v4header->destination_address) == ip_INC[1])
             return;
 
-
-        /*
-        ToDo锁机制
-        */
         packetBuffer.push(pkt_data, totalen);
+        
+        PackType p = Pip;
+        switch (v4header->protocol)
+        {
+        case 1:
+            p = Picmp;
+           // cout << "ICMP \n";
+            break;
+        case 11:
+            p = Ptcp;
+           // cout << "TCP \n";
+            break;
+        case 17:
+            p = Pudp;
+          //  cout << "UDP \n";
+            break;
+        default:
+          //  cout << "IP \n";
+            break;
+        }
+        logger.push(retNum(), Tcap, p, ehtHeader->src_mac, ehtHeader->dst_mac, ntohl(v4header->source_address), ntohl(v4header->destination_address));
     }
     else if (etherType == 0x0806) {//Arp
 
@@ -300,10 +336,14 @@ void _rcvProc(int totalen, const u_char* pkt_data) {
         if (!IsArpForSelf((ArpPacket*)pkt_data))  //不在同一网段报文
             return;
 
+        //cout << "ARP\n";
+        arpCache.update(ntohl(pkt->arp_head.sender_proto_addr), pkt->arp_head.sender_hw_addr);
+        logger.push(0, Tcap, Parp, pkt->arp_head.sender_hw_addr, pkt->arp_head.target_hw_addr, ntohl(pkt->arp_head.sender_proto_addr), ntohl(pkt->arp_head.target_proto_addr));
 
-        arpCache.update(ntohl(pkt->arp_head.target_proto_addr), pkt->arp_head.target_hw_addr);
 
     }
+   
+  
 }
 
 DWORD WINAPI rcvThrd(LPVOID lpParam) {
@@ -352,13 +392,13 @@ void cmdThrd(){
 void test() {
     const string test_mask = "255.255.255.0";
 
-    const string MAC0 = "4e-12-ff-22-14-a1";
+    const string MAC0 = "00-0c-29-5d-0c-bc";
 
     const string ip0 = "206.1.1.2";
     const string ip1 = "206.1.3.2";
 
     const string ip_next = "206.1.2.2";
-    const string mac_next = "22-21-44-53-09-21";
+    const string mac_next = "00-0c-29-1b-c0-76";
     /*
     206.1.1.2       206.1.1.1       206.1.2.1        206.1.2.2            206.1.3.2
        PC0      -->   inc0  -  [R]  - inc1    -->       R2        -->        PC1
@@ -390,7 +430,7 @@ void test() {
 
 
     /* 构建ping 包 */
-    pingPacket.ping_Head.type = 0;  //icmp
+    pingPacket.ping_Head.type = 8;  //icmp
     pingPacket.ping_Head.code = 0;
 
     pingPacket.v4_Head.protocol = 1;  //ip
@@ -431,23 +471,48 @@ void boot_router(bool TEST) {
     cout << "INC1: " << intToIp(ip_INC[1]) << " " << intToIp(mask_INC[1]) << endl << " " << arrayToMac(mac_INC[1])<<endl;
 
 
-    packetBuffer = PacketQueue();
+    //packetBuffer = PacketQueue();
     rooterTable = RouterTable("1");
     arpCache = ArpCache();
-    logger = Loger();
+
     cout << "PackBuffer, rooterTable, ArpCache, Logger....\n";
-    //rooterTable.addRoute(RouteEntry("0.0.0.0", "0.0.0.0", "127.0.0.1", "1"));
-    
+
+    rooterTable.addRoute(RouteEntry(ip_INC[0]& mask_INC[0],mask_INC[0], 0, 0));
+    rooterTable.addRoute(RouteEntry(ip_INC[1]& mask_INC[1], mask_INC[1], 0, 1));
+    rooterTable.addRoute(RouteEntry("206.1.3.0", "255.255.255.0", "206.1.2.2", "1"));
+
     cout << "RooterTable: " << endl;
     rooterTable.printTable();
 
 
+    /*206.1.2.2 -- > 00 - 0c - 29 - 1b - c0 - 76  Va
+        206.1.2.1 -- > 00 - 0c - 29 - c9 - bd - 0a  Va
+        206.1.1.2 -- > 00 - 0c - 29 - 5d - 0c - bc  Va
+        206.1.1.1 -- > 00 - 0c - 29 - c9 - bd - 0a  Va*/
+    string r2s = "00-0c-29-1b-c0-76";
+    string pc0s = "00-0c-29-5d-0c-bc";
+
+    u_char* r2 = new u_char[6];
+    u_char* pc0 = new u_char[6];
+
+    sscanf_s(r2s.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
+        &r2[0], &r2[1], &r2[2],
+        &r2[3], &r2[4], &r2[5]);
+    sscanf_s(pc0s.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
+        &pc0[0], &pc0[1], &pc0[2],
+        &pc0[3], &pc0[4], &pc0[5]);
+    //arpCache.update(ipToInt("206.1.2.2"), r2);
+    //arpCache.update(ipToInt("206.1.1.2"), pc0);
+
+    cout << "arpCache: " << endl;
+    arpCache.printArpAache();
+
     if (TEST) test();
     else {
-        hTnsThrd = CreateThread(NULL, 0, tnsThrd, NULL, 0, NULL);
+        
         hRcvThrd = CreateThread(NULL, 0, rcvThrd, NULL, 0, NULL);
+        hTnsThrd = CreateThread(NULL, 0, tnsThrd, NULL, 0, NULL);
     }
-
 
     cmdThrd();
 }

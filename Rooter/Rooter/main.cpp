@@ -24,6 +24,8 @@ int main() {
 
 	a.lookUp(222, &mac);
 	cout << arrayToMac(mac);*/
+	// current date/time based on current system
+
 
 	boot_router(RELEASE_MOD);
 }

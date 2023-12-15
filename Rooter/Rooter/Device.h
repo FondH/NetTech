@@ -79,7 +79,7 @@ bool boot_root_INC() {
     ip_INC[1] = ipToInt(DEFAULT_INC1_IP);
     mask_INC[0] = ipToInt("255.255.255.0");
     mask_INC[1] = ipToInt("255.255.255.0");
-
+    return 1;
 }
 
 

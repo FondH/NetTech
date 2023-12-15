@@ -56,7 +56,7 @@ void exit_router();
 * return 2 下一跳地址查询失败
 * return 3 发送失败
 */
-int transPacket(u_char* pkt);
+int _transPacket(u_char* pkt);
 
 //根据ip返回对应INC序号 返回-1表示不匹配
 uint32_t matchNet(uint32_t dst_ip);
@@ -98,15 +98,22 @@ void parseCmd(const string& c) {
         iss >> subCmd;
         
         if (subCmd == "add") {
-            string destinationIP, subnetMask, nextHop, gig;
-            iss >> destinationIP >> subnetMask >> nextHop>>gig;
-            if (rooterTable.addRoute(destinationIP, subnetMask, nextHop, gig))
+            string destinationIP, subnetMask, nextHop,gig;
+            iss >> destinationIP >> subnetMask >> nextHop;
+
+            int n1 = ipToInt(nextHop) & ipToInt(subnetMask);
+            gig = n1 == (ip_INC[0] & mask_INC[0]) ? "0" : "1";
+
+            if (rooterTable.addRoute(destinationIP, subnetMask, nextHop,gig))
                 cout << "\n[SUCC] Add.\n";
-            else cout << "\n[ERROR] Please Check the subcommand.\n";
+            else cout << "\n[ERROR] Please Check the option.\n";
         }
         else if (subCmd == "del") {
             string destinationIP, subnetMask, nextHop,gig;
-            iss >> destinationIP >> subnetMask >> nextHop>>gig;
+            iss >> destinationIP >> subnetMask >> nextHop;
+
+            int n1 = ipToInt(nextHop) & ipToInt(subnetMask);
+            gig = n1 == (ip_INC[0] & mask_INC[0]) ? "0" : "1";
             if (rooterTable.deleteRoute(RouteEntry(destinationIP, subnetMask, nextHop, gig)))
                 cout << "\n[SUCC] Dele.\n";
             else  cout << "\n[ERROR] Target Entry is not exit.\n";
@@ -135,20 +142,28 @@ void parseCmd(const string& c) {
                 logger.print(Tcap);
             else { "\n[ERROR] Unknown 'route' subcommand.\n"; }
         }
-        else if (subCmd == "dump") {}
+        else if (subCmd == "dump") {
+            string finame;
+            iss >> finame;
+            if (finame == "")
+                logger.dump("Log.txt");
+            else
+                logger.dump(finame+".txt");
+        
+        }
         else {
             cout << "\n[ERROR]  'log'  print or dump ? \n";
         }
     }
-    else if (cmd == "arpcache") {
+    else if (cmd == "arp-cache") {
         arpCache.printArpAache();
 
     }
-    else if(cmd == "packetqueue"){
+    else if(cmd == "packet-queue"){
         packetBuffer.printPacketQueue();
     }
     else if (cmd == "") {
-
+        
 
     }
 
@@ -238,7 +253,7 @@ int _transPacket(u_char* pkt) {
         if (clock() - timer > 10000)
             return 2;
         //cout << "Search Next Mac Runtime" << endl;
-        Sleep(10);
+        Sleep(500);
     }
 
     /* Send */
@@ -325,6 +340,7 @@ void _rcvProc(int totalen, const u_char* pkt_data) {
             break;
         }
         logger.push(retNum(), Tcap, p, ehtHeader->src_mac, ehtHeader->dst_mac, ntohl(v4header->source_address), ntohl(v4header->destination_address));
+    
     }
     else if (etherType == 0x0806) {//Arp
 
@@ -377,7 +393,7 @@ void cmdThrd(){
     while (true)
     {
         string cmd;
-        cout << ">#";
+        cout << "@fondH/>";
         getline(cin,cmd);
         if (cmd == "exit")
             break;
@@ -409,8 +425,6 @@ void test() {
 
 
     PingPacket pingPacket;
-
-
 
     u_char* next_mac = new u_char[6];
     u_char* src_mac = new u_char[6];
@@ -459,6 +473,7 @@ void exit_router(){
     CloseHandle(hRcvThrd);
     CloseHandle(hTnsThrd);
     CloseHandle(hLogThrd);
+    logger.dump("Log.txt");
     cout << "Rooter exited";
     
 }
@@ -484,11 +499,11 @@ void boot_router(bool TEST) {
     cout << "RooterTable: " << endl;
     rooterTable.printTable();
 
-
+    //硬编码
     /*206.1.2.2 -- > 00 - 0c - 29 - 1b - c0 - 76  Va
         206.1.2.1 -- > 00 - 0c - 29 - c9 - bd - 0a  Va
         206.1.1.2 -- > 00 - 0c - 29 - 5d - 0c - bc  Va
-        206.1.1.1 -- > 00 - 0c - 29 - c9 - bd - 0a  Va*/
+        206.1.1.1 -- > 00 - 0c - 29 - c9 - bd - 0a  Va
     string r2s = "00-0c-29-1b-c0-76";
     string pc0s = "00-0c-29-5d-0c-bc";
 
@@ -500,14 +515,14 @@ void boot_router(bool TEST) {
         &r2[3], &r2[4], &r2[5]);
     sscanf_s(pc0s.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
         &pc0[0], &pc0[1], &pc0[2],
-        &pc0[3], &pc0[4], &pc0[5]);
+        &pc0[3], &pc0[4], &pc0[5]);*/
     //arpCache.update(ipToInt("206.1.2.2"), r2);
     //arpCache.update(ipToInt("206.1.1.2"), pc0);
 
     cout << "arpCache: " << endl;
     arpCache.printArpAache();
 
-    if (TEST) test();
+    if (TEST)  test();
     else {
         
         hRcvThrd = CreateThread(NULL, 0, rcvThrd, NULL, 0, NULL);

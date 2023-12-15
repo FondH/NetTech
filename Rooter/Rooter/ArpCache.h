@@ -29,6 +29,7 @@ public:
 	void update(uint32_t ip, u_char* new_mac);
 	
 	void printArpAache();
+
 	int getSize();
 	~ArpCache() {}
 };

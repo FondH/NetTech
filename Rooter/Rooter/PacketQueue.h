@@ -40,7 +40,7 @@ public:
 	 u_char* pop() {
 		
 		while (buffer.empty()) {
-			Sleep(10);
+			Sleep(50);
 			continue; 
 		}
 		lock_guard<std::mutex> lk(mtx);
